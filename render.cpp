@@ -13,7 +13,7 @@ const int height = 50;
 const float ar = 2.5*height/width;
 const int fov = 90;
 char screen[height][width];
-char ascii[16] = {' ', '.',':', '~', '=', '>', '+', '*', '%', '#', '$', '&', '&', '@', '@'};
+char ascii[15] = {' ', '.',':', '~', '=', '>', '+', '*', 'k', '%', '#', '$', '&', '@'};
 float max_dist = 3;
 
 struct point {
@@ -121,34 +121,32 @@ float areaTri(float x1, float y1, float x2, float y2, float x3, float y3) {
     return abs((x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))/2.0);
 }
 
-bool inTriangle(point a, point b, point c, float x, float y) {
-    float area = areaTri(a.x, a.y, b.x, b.y, c.x, c.y);
-    float area_d = areaTri(a.x, a.y, b.x, b.y, x, y) + areaTri(b.x, b.y, c.x, c.y, x, y) + areaTri(c.x, c.y, a.x, a.y, x, y);
-    return (area == area_d);
-}
-
+//fill triangle given 3 points based on 2d plane
 void fillTri(point a, point b, point c) {
     int min_x = min(a.x, min(b.x, c.x));
     int max_x = max(a.x, max(b.x, c.x));
     int min_y = min(a.y, min(b.y, c.y));
     int max_y = max(a.y, max(b.y, c.y));
-    float ascii_len = sizeof(ascii);
-    float line_start, line_end;
-    float z_start, z_end;
+    float z;
+    float ascii_len = sizeof(ascii)-1;
+    float ab_area, bc_area, ca_area, area;
+    char ascii_val;
 
     for (int y = max(min_y, 0); y < min(max_y, height); y++) {
         for (int x = min(width, min_x-1); x <= max(max_x, 0); x++) {
-            if (inTriangle(a, b, c, x, y)) {
-                line_start = (float)x;
-                break;
-            }
-        }
+            area = areaTri(a.x, a.y, b.x, b.y, c.x, c.y);
+            ab_area = areaTri(a.x, a.y, b.x, b.y, x, y);
+            bc_area = areaTri(b.x, b.y, c.x, c.y, x, y);
+            ca_area = areaTri(c.x, c.y, a.x, a.y, x, y);
+            if (area == ab_area + bc_area + ca_area && area > 0) {
+                
+                z = ((a.z*bc_area) + (b.z*ca_area) + (c.z*ab_area))/area;
+                ascii_val = ascii[(int)(ascii_len*(1-z/max_dist))];
 
-        for (int x = line_start; x <= min(max_x+1, width); x++) {
-            if (!inTriangle(a, b, c, x, y)) {
-                line_end = (float)x;
-                drawLine(point {line_start, (float)y, 2}, point {line_end, (float)y, 2});
-                break;
+                if (y > 0 && y < height && x > 0 && x < width &&
+                getAsciiPos(screen[y][x]) < getAsciiPos(ascii_val)) {
+                screen[y][x] = ascii_val;
+            }
             }
         }
 
@@ -160,9 +158,9 @@ void drawTri(triangle tri) {
     bool b = translatePoint(&tri.b);
     bool c = translatePoint(&tri.c);
     if (a && b && c) {
-        drawLine(tri.a, tri.b);
-        drawLine(tri.b, tri.c);
-        drawLine(tri.c, tri.a);
+        //drawLine(tri.a, tri.b);
+        //drawLine(tri.b, tri.c);
+        //drawLine(tri.c, tri.a);
         fillTri(tri.a, tri.b, tri.c);
     }
 }
@@ -228,6 +226,7 @@ void rotateObj(obj *o, float theta, char type) {
     }
 }
 
+//shifts object given type x, y, z
 void shiftObj(obj *o, float f, char type) {
     for (triangle &t: o->tris) {
         if (type == 'x') {
@@ -267,7 +266,7 @@ void prntScreen() {
 }
 
 int main() {
-    point m1 = {0.5, 0.5, 1.5};
+    point m1 = {0.5, 0, 1.25};
     clearScreen();
     int indx = 0;
 
@@ -283,12 +282,16 @@ int main() {
     m.origin = m1;
     prntScreen();
 
+    shiftObj(&m, -0.25, 'z');
+    shiftObj(&m, -0.5, 'y');
+
     for (int i=0; i < 1000; i++) {
         indx = 0;
         rotateObj(&m, 0.01, 'y');
         rotateObj(&m, 0.01, 'x');
-        shiftObj(&m, -0, 'z');
+        shiftObj(&m, -0.0, 'z');
         for (triangle t: m.tris) {
+            
             drawTri(t);
         }
         system("clear");
