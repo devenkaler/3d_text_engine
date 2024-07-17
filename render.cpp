@@ -13,6 +13,7 @@ const int height = 50;
 const float ar = 2.5*height/width;
 const int fov = 90;
 char screen[height][width];
+string screen_color[height][width];
 char ascii[15] = {' ', '.',':', '~', '=', '>', '+', '*', 'k', '%', '#', '$', '&', '@'};
 float max_dist = 3;
 
@@ -27,11 +28,32 @@ struct triangle {
 struct obj {
     vector<triangle> tris;
     point origin;
+    string color;
 };
+
+//clears screen array (not terminal)
+void clearScreen() {
+    for (int y=0; y < height; y++) {
+        for (int x=0; x < width; x++) {
+            screen[y][x] = ascii[0];
+        }
+    }
+}
+
+//prints to stdout
+void prntScreen() {
+    for (int y=0; y < height; y++) {
+        for (int x=0; x < width; x++) {
+            cout << screen_color[y][x] << screen[y][x];
+        }
+        cout << endl;
+    }
+    clearScreen();
+}
 
 //projects point in 3d plane to 2d plane (origin around x, y plane)
 bool translatePoint(point *p) {
-    if (p->z < max_dist && p->z > 0) {
+    if (p->z < max_dist && p->z > 0.1) {
         float f = 1/tan(fov/2);
         p->x = p->x*ar*f/p->z;
         p->x = (int)round((p->x+1)*(width-1)/2);
@@ -52,7 +74,7 @@ int getAsciiPos(char c) {
     return -1;
 }
 
-void drawLine(point a, point b) {
+void drawLine(point a, point b, string color) {
     int h = (int)height;
     int w = (int)width;
     int y_err = 1;
@@ -93,6 +115,7 @@ void drawLine(point a, point b) {
             if (y+(y_err*i) > 0 && y+(y_err*i) < h && x > 0 && x < w &&
                 getAsciiPos(screen[y+(y_err*i)][x]) < getAsciiPos(ascii_val)) {
                 screen[y+(y_err*i)][x] = ascii_val;
+                screen_color[y+(y_err*i)][x] = color;
             }
             err += m;
             z += dz/abs(dy);
@@ -109,6 +132,7 @@ void drawLine(point a, point b) {
             if (y > 0 && y <= h && x+i > 0 && x+i < w &&
                 getAsciiPos(screen[y][x+i]) < getAsciiPos(ascii_val)) {
                 screen[y][x+i] = ascii_val;
+                screen_color[y][x+1] = color;
             }
             err += m;
             z += dz/dx;
@@ -122,7 +146,7 @@ float areaTri(float x1, float y1, float x2, float y2, float x3, float y3) {
 }
 
 //fill triangle given 3 points based on 2d plane
-void fillTri(point a, point b, point c) {
+void fillTri(point a, point b, point c, string color) {
     int min_x = min(a.x, min(b.x, c.x));
     int max_x = max(a.x, max(b.x, c.x));
     int min_y = min(a.y, min(b.y, c.y));
@@ -144,25 +168,32 @@ void fillTri(point a, point b, point c) {
                 ascii_val = ascii[(int)(ascii_len*(1-z/max_dist))];
 
                 if (y > 0 && y < height && x > 0 && x < width &&
-                getAsciiPos(screen[y][x]) < getAsciiPos(ascii_val)) {
-                screen[y][x] = ascii_val;
-            }
+                    getAsciiPos(screen[y][x]) < getAsciiPos(ascii_val)) {
+                    screen[y][x] = ascii_val;
+                    screen_color[y][x] = color;
+                }
             }
         }
 
     }
 }
 
-void drawTri(triangle tri) {
+void drawTri(triangle tri, string color="\033[0m") {
     bool a = translatePoint(&tri.a);
     bool b = translatePoint(&tri.b);
     bool c = translatePoint(&tri.c);
     if (a && b && c) {
-        //drawLine(tri.a, tri.b);
-        //drawLine(tri.b, tri.c);
-        //drawLine(tri.c, tri.a);
-        fillTri(tri.a, tri.b, tri.c);
+        //drawLine(tri.a, tri.b, color);
+        //drawLine(tri.b, tri.c, color);
+        //drawLine(tri.c, tri.a, color);
+        fillTri(tri.a, tri.b, tri.c, color);
     }
+}
+
+void renderObj(obj o) {
+    for (triangle t: o.tris) {  
+            drawTri(t, o.color);
+        }
 }
 
 void shiftx(point *pnt, float f) {
@@ -245,55 +276,32 @@ void shiftObj(obj *o, float f, char type) {
     }
 }
 
-//clears screen array (not terminal)
-void clearScreen() {
-    for (int y=0; y < height; y++) {
-        for (int x=0; x < width; x++) {
-            screen[y][x] = ascii[0];
-        }
-    }
-}
-
-//prints to stdout
-void prntScreen() {
-    for (int y=0; y < height; y++) {
-        for (int x=0; x < width; x++) {
-            cout << screen[y][x];
-        }
-        cout << endl;
-    }
-    clearScreen();
-}
-
 int main() {
-    point m1 = {0.5, 0, 1.25};
     clearScreen();
     int indx = 0;
 
-    vector<triangle> c = {triangle {point {0, 0, 1}, point {0, 1, 1}, point {1, 0, 1}}, triangle {point {1, 1, 1}, point {0, 1, 1}, point {1, 0, 1}},
+    obj cube = {{triangle {point {0, 0, 1}, point {0, 1, 1}, point {1, 0, 1}}, triangle {point {1, 1, 1}, point {0, 1, 1}, point {1, 0, 1}},
                           triangle {point {0, 0, 2}, point {0, 1, 2}, point {1, 0, 2}}, triangle {point {1, 1, 2}, point {0, 1, 2}, point {1, 0, 2}},
                           triangle {point {0, 0, 1}, point {0, 0, 2}, point {0, 1, 1}}, triangle {point {0, 0, 2}, point {0, 1, 1}, point {0, 1, 2}},
                           triangle {point {1, 0, 1}, point {1, 0, 2}, point {1, 1, 1}}, triangle {point {1, 0, 2}, point {1, 1, 1}, point {1, 1, 2}},
                           triangle {point {0, 0, 1}, point {0, 0, 2}, point {1, 0, 1}}, triangle {point {0, 0, 2}, point {1, 0, 1}, point {1, 0, 2}},
-                          triangle {point {0, 1, 1}, point {0, 1, 2}, point {1, 1, 1}}, triangle {point {0, 1, 2}, point {1, 1, 1}, point {1, 1, 2}}};
+                          triangle {point {0, 1, 1}, point {0, 1, 2}, point {1, 1, 1}}, triangle {point {0, 1, 2}, point {1, 1, 1}, point {1, 1, 2}}},
+                          
+                          {0.5, 0.5, 1.5},
+                          
+                          "\033[31m"};
 
-    obj m;
-    m.tris = c;
-    m.origin = m1;
-    prntScreen();
-
-    shiftObj(&m, -0.25, 'z');
-    shiftObj(&m, -0.5, 'y');
+    obj cube2 = cube;
+    cube2.color = "\033[33m";
 
     for (int i=0; i < 1000; i++) {
         indx = 0;
-        rotateObj(&m, 0.01, 'y');
-        rotateObj(&m, 0.01, 'x');
-        shiftObj(&m, -0.0, 'z');
-        for (triangle t: m.tris) {
-            
-            drawTri(t);
-        }
+        rotateObj(&cube, 0.01, 'y');
+        rotateObj(&cube, 0.01, 'x');
+        rotateObj(&cube2, -0.01, 'x');
+        rotateObj(&cube2, -0.01, 'y');
+        renderObj(cube);
+        renderObj(cube2);
         system("clear");
         prntScreen();
         this_thread::sleep_for(chrono::milliseconds(50));
