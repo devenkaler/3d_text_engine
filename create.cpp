@@ -2,6 +2,7 @@
 
 using namespace std;
 
+
 int main() {
     obj cube = {{triangle {point {0, 0, 1}, point {0, 1, 1}, point {1, 0, 1}}, triangle {point {1, 1, 1}, point {0, 1, 1}, point {1, 0, 1}},
                           triangle {point {0, 0, 2}, point {0, 1, 2}, point {1, 0, 2}}, triangle {point {1, 1, 2}, point {0, 1, 2}, point {1, 0, 2}},
@@ -22,6 +23,8 @@ int main() {
         rotateObj(&cube, 0.01, 'x');
         rotateObj(&cube2, -0.01, 'x');
         rotateObj(&cube2, -0.01, 'y');
+        shiftObj(&cube2, -0.01, 'z');
+        shiftObj(&cube2, -0.01, 'y');
         renderObj(cube);
         renderObj(cube2);
         system("clear");

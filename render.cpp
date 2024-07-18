@@ -1,15 +1,32 @@
 #include "render.h"
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 using namespace std;
 
-const int width = 200;
-const int height = 50;
-const float ar = 2.5*height/width;
 const int fov = 90;
-char screen[height][width];
-string screen_color[height][width];
+char screen[300][250];
+string screen_color[300][250];
 char ascii[15] = {' ', '.',':', '~', '=', '>', '+', '*', 'k', '%', '#', '$', '&', '@'};
 float max_dist = 3;
+
+//get current screen size
+class screen_data {
+    public:
+    int width;
+    int height;
+    screen_data() {
+        struct winsize size;
+        ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+        height = size.ws_row/1.25;
+        width = size.ws_col;
+    }
+};
+
+screen_data s;
+const int width = s.width;
+const int height = s.height;
+const float ar = 2.5*height/width;
 
 struct point {
     float x, y, z;
@@ -47,7 +64,7 @@ void prntScreen() {
 
 //projects point in 3d plane to 2d plane (origin around x, y plane)
 bool translatePoint(point *p) {
-    if (p->z < max_dist && p->z > 0.1) {
+    if (p->z < max_dist && p->z > 0.01) {
         float f = 1/tan(fov/2);
         p->x = p->x*ar*f/p->z;
         p->x = (int)round((p->x+1)*(width-1)/2);
@@ -157,7 +174,6 @@ void fillTri(point a, point b, point c, string color) {
             bc_area = areaTri(b.x, b.y, c.x, c.y, x, y);
             ca_area = areaTri(c.x, c.y, a.x, a.y, x, y);
             if (area == ab_area + bc_area + ca_area && area > 0) {
-                
                 z = ((a.z*bc_area) + (b.z*ca_area) + (c.z*ab_area))/area;
                 ascii_val = ascii[(int)(ascii_len*(1-z/max_dist))];
 
