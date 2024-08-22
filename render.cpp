@@ -7,7 +7,9 @@ using namespace std;
 const int fov = 90;
 char screen[300][250];
 string screen_color[300][250];
-char ascii[15] = {' ', '.',':', '~', '=', '>', '+', '*', 'k', '%', '#', '$', '&', '@'};
+char ascii[71] = {' ','.', '\'', '\\', '`', '^', '"', ',', ':', ';', 'I', 'l', '!', 'i', '>', '<', '~', '+', '_', '-', '?', ']', '[', '}', 
+                '{', '1', ')', '(', '|', '\\', '/', 't', 'f', 'j', 'r', 'x', 'n', 'u', 'v', 'c', 'z', 'X', 'Y', 'U', 'J', 'C', 'L', 'Q',
+                 '0', 'O', 'Z', 'm', 'w', 'q', 'p', 'd', 'b', 'k', 'h', 'a', 'o', '*', '#', 'M', 'W', '&', '8', '%', 'B', '@', '$'};
 float max_dist = 3;
 
 //get current screen size
@@ -18,8 +20,8 @@ class screen_data {
     screen_data() {
         struct winsize size;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
-        height = size.ws_row/1.25;
-        width = size.ws_col;
+        height = size.ws_row/1.1;
+        width = size.ws_col/1.01;
     }
 };
 
@@ -55,7 +57,11 @@ void clearScreen() {
 void prntScreen() {
     for (int y=0; y < height; y++) {
         for (int x=0; x < width; x++) {
-            cout << screen_color[y][x] << screen[y][x];
+            if (y == 0 || x == 0 || y == height-1 || x == width-1) {
+                cout << "\033[0m.";
+            } else {
+                cout << screen_color[y][x] << screen[y][x];
+            }
         }
         cout << endl;
     }
