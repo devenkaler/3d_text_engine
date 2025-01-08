@@ -2,7 +2,9 @@
 
 Displays 3d object (obj file) which is specified in create.cpp (line 76)
 
-run  ```g++ create.cpp```
+run  
+```g++ create.cpp```
+```./a.out```
 
 Able to rotate, and move objects
 
