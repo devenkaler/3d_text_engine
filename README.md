@@ -7,7 +7,13 @@ run
 
 ```./a.out```
 
-Able to rotate, and move objects using functions
+Able to rotate, and move objects using functions   defined in render.cpp (see render.h)
+
+Clone:
+
+```git clone https://github.com/devenkaler/3d_text_engine```
+
+The project includes a donut object with sample code on how to use render
 
 Currently only supports Linux 
 
