@@ -7,7 +7,7 @@ run
 
 ```./a.out```
 
-Able to rotate, and move objects
+Able to rotate, and move objects using functions
 
 Currently only supports Linux 
 
